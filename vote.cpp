@@ -5,10 +5,18 @@ void votoken::getbalance(account_name user){
 	auto usr = _accounts.find(user);
 	eosio_assert(usr!=_accounts.end(),"Ooops");
 	//const auto& usr = _accounts.get(user);
-	print("User:",name{(*usr).name},"T okens: ",(*usr).balance);
+	print("User:",name{(*usr).name}," Tokens: ",(*usr).balance);
 }
 void votoken::givevote(account_name user, account_name post){
 	
+}
+void creatpost(account_name postid){
+	auto target = _posts.find(postid);
+	eosio_assert(target!=_posts.end(),"This alterantive alrady exists")
+	_posts.emplace(postid,[&](auto& npost){
+		npost.postid=postid;
+		npost.total_voted=0;
+	});
 }
 void votoken::taketoken(account_name user,uint64_t token){
 
@@ -22,9 +30,9 @@ void votoken::taketoken(account_name user,uint64_t token){
 		_accounts.emplace(user, [&](auto& a) {
 		a.name = user;
 		a.balance = token;
-        });	
+      	  });	
 	}
 }
 
-EOSIO_ABI(votoken,(getbalance)(taketoken))
+EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost))
 
