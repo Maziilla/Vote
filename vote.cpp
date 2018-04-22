@@ -46,7 +46,7 @@ void votoken::taketoken(account_name user,uint64_t token){
 		
 		print("User:",name{(*account).name}, " Tokens: ",(*account).balance," -> ");
 		_accounts.modify(account, 0, [&](auto& usr) {usr.balance+=token;});
-		print(" User:",name{(*account).name}, " Tokens: ",(*account).balance);
+		print("User:",name{(*account).name}, " Tokens: ",(*account).balance);
 	}else{
 		_accounts.emplace(user, [&](auto& a) {
 		a.name = user;
@@ -54,6 +54,19 @@ void votoken::taketoken(account_name user,uint64_t token){
       	  });	
 	}
 }
+void votoken::view(uint64_t e){
+	
+	uint64_t k=10;
+	uint32_t i=0;
+	//auto itr=_posts.begin();
+	//print(name{(*itr).postid}," ");
+	{	
+		print(name{kek.postid}," ");
+		i++;		
+		eosio_assert(i<100,"Looooop");
+	print("");
+	}
+}
 
-EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(givevote)(viewpost))
+EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(givevote)(viewpost)(view))
 

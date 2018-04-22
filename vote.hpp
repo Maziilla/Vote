@@ -14,6 +14,7 @@ namespace voting{
 			void taketoken(account_name user,uint64_t token);
 			void creatpost(account_name postid);
 			void viewpost(account_name postid);
+			void view(uint64_t e);
 			
 		private:
 			struct account{
@@ -40,7 +41,8 @@ namespace voting{
 			struct vote_action {
 				account_name	voter;
 				account_name	postid;
-				uint32_t	votepower;			
+				uint32_t	votepower;	
+				EOSLIB_SERIALIZE(vote_action,(voter)(postid)(votepower))		
 			}; 
 	};
 }
