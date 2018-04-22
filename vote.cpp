@@ -60,7 +60,7 @@ void votoken::view(uint64_t e){
 	uint32_t i=0;
 	//auto itr=_posts.begin();
 	//print(name{(*itr).postid}," ");
-	{	
+	for( auto& kek : _posts){	
 		print(name{kek.postid}," ");
 		i++;		
 		eosio_assert(i<100,"Looooop");
