@@ -3,21 +3,42 @@ using namespace voting;
 
 void votoken::getbalance(account_name user){
 	auto usr = _accounts.find(user);
-	eosio_assert(usr!=_accounts.end(),"Ooops");
+	eosio_assert(usr!=_accounts.end(),"This account not exists");
 	//const auto& usr = _accounts.get(user);
 	print("User:",name{(*usr).name}," Tokens: ",(*usr).balance);
 }
 void votoken::givevote(account_name user, account_name post){
-	
+	auto usr = _accounts.find(user);
+	eosio_assert(usr!=_accounts.end(),"This account not exists");
+	auto vot_post = _posts.find(post);
+	eosio_assert(vot_post!=_posts.end(),"This alterantive not exists");
+	eosio_assert((*usr).balance>10,"You don't have enough token for voting");
+	_posts.modify(vot_post,0,[&](auto& vot){
+		vot.total_voted+=(*usr).balance/10;
+	});
+	print("Your vote is given to ",name{(*vot_post).postid});
+
 }
-void creatpost(account_name postid){
+
+void votoken::creatpost(account_name postid){
 	auto target = _posts.find(postid);
-	eosio_assert(target!=_posts.end(),"This alterantive alrady exists")
+	eosio_assert(target==_posts.end(),"This alterantive alrady exists");
 	_posts.emplace(postid,[&](auto& npost){
 		npost.postid=postid;
-		npost.total_voted=0;
+		npost.total_voted=0;		
 	});
+	target = _posts.find(postid);
+	print("Alternative -> ",name{(*target).postid});
 }
+
+void votoken::viewpost(account_name postid)
+{
+	auto target = _posts.find(postid);
+	eosio_assert(target!=_posts.end(),"This alternative not exists");
+	print("Alternative: ",name{(*target).postid}," number of votes: ",(*target).total_voted);
+	
+}
+
 void votoken::taketoken(account_name user,uint64_t token){
 
 	auto account = _accounts.find(user);
@@ -34,5 +55,5 @@ void votoken::taketoken(account_name user,uint64_t token){
 	}
 }
 
-EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost))
+EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(givevote)(viewpost))
 

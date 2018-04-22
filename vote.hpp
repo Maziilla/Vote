@@ -13,16 +13,8 @@ namespace voting{
 			void givevote(account_name voter, account_name post);
 			void taketoken(account_name user,uint64_t token);
 			void creatpost(account_name postid);
-struct post{
-				//account_name autor;
-				uint64_t total_voted = 0;
-				//uint64_t max_voted;
-				account_name postid;
-				uint64_t primary_key()const {return postid;}
-				EOSLIB_SERIALIZE(post,(total_voted)(postid))
-			};
-			eosio::multi_index<N(posts),post> _posts;
-
+			void viewpost(account_name postid);
+			
 		private:
 			struct account{
 				account_name name;
@@ -34,7 +26,16 @@ struct post{
 			};
 			eosio::multi_index<N(accounts),account> _accounts;
 
-			
+			struct post{
+				//account_name autor;
+				uint64_t total_voted = 0;
+				//uint64_t max_voted;
+				account_name postid;
+				uint64_t primary_key()const {return postid;}
+				EOSLIB_SERIALIZE(post,(total_voted)(postid))
+			};
+			 eosio::multi_index<N(posts),post> _posts;
+
 
 			struct vote_action {
 				account_name	voter;
