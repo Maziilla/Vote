@@ -8,29 +8,31 @@ void votoken::getbalance(account_name user){
 	//const auto& usr = _accounts.get(user);
 	print("User:",name{(*usr).name}," Tokens: ",(*usr).balance);
 }
-void votoken::givevote(account_name user, account_name post){
-	require_auth(user);
+void votoken::givevote(account_name user, account_name post,uint32_t tokens){
+	
 	auto usr = _accounts.find(user);
 	eosio_assert(usr!=_accounts.end(),"This account not exists");
 	auto vot_post = _posts.find(post);
 	eosio_assert(vot_post!=_posts.end(),"This alterantive not exists");
-	eosio_assert((*usr).balance>10,"You don't have enough token for voting");
+	eosio_assert((*usr).balance>=tokens,"You want to spend more tokens then you have");
+	eosio_assert(tokens>=10,"You don't have enough token for voting");
 	auto vot = _vote_action.find((user,post));
 	eosio_assert(vot==_vote_action.end(),"You alraedy vote for this altrnative");
 	_vote_action.emplace((user,post),[&](auto& nvote){
 		nvote.voter=user;
 		nvote.postid=post;
-		nvote.votepower = (*usr).balance/10;		
+		nvote.votepower = tokens/10;		
 	});
 	_posts.modify(vot_post,0,[&](auto& vot){
-		vot.total_voted+=(*usr).balance/10;
+		vot.total_voted+=tokens/10;
 	});
+	_accounts.modify(usr, 0, [&](auto& us) {us.balance-=tokens/10*10;});
 	print("Your vote is given to ",name{(*vot_post).postid});
 
 }
 
 void votoken::returnvote(account_name user, account_name post){
-	require_auth(user);
+	//require_auth(post);
 	auto usr = _accounts.find(user);
 	eosio_assert(usr!=_accounts.end(),"This account not exists");
 	auto vot_post = _posts.find(post);
@@ -40,9 +42,9 @@ void votoken::returnvote(account_name user, account_name post){
 	eosio_assert(vot!=_vote_action.end(),"You not vote for this altrnative");
 	_posts.modify(vot_post,0,[&](auto& vote){
 		vote.total_voted-=(*vot).votepower;
-	});
-	_vote_action.erase(vot);
-	
+	});	
+	_accounts.modify(usr, 0, [&](auto& us) {us.balance+=(*vot).votepower*10;});
+	_vote_action.erase(vot);	
 	print("Your vote return from ",name{(*vot_post).postid});
 
 }
@@ -87,16 +89,42 @@ void votoken::taketoken(account_name user,uint64_t token){
 void votoken::view(uint64_t e){
 	
 	uint64_t k=10;
-	uint32_t i=0;
-	//auto itr=_posts.begin();
-	//print(name{(*itr).postid}," ");
+	uint32_t i=0;	
 	for( auto& kek : _posts){	
-		print(name{kek.postid}," ");
-		i++;		
-		eosio_assert(i<100,"Looooop");
-	print("");
+		print(name{kek.postid}," ");	
 	}
 }
 
-EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(givevote)(viewpost)(view)(returnvote))
+void votoken::resultvot(uint64_t e){	
+	uint64_t maxvot=0;
+	uint32_t count_max=0;
+	uint32_t i=0;	
+	account_name winner;
+	for( auto& kek : _posts){
+		if(kek.total_voted > maxvot){
+			count_max = 1;
+			maxvot = kek.total_voted;
+			winner = name{kek.postid};
+		}else
+			if(kek.total_voted == maxvot)
+				count_max++;	
+	}
+	eosio_assert(count_max==1,"The winner can not be determinate :(");
+	print(name{winner});
+	returnallvote(1);
+}
+
+void votoken::returnallvote(uint64_t e){	
+	for( auto& vot : _vote_action){
+		auto usr = _accounts.find(name{vot.voter});
+		_accounts.modify(usr, 0, [&](auto& us) {us.balance+=vot.votepower*10;});
+		auto pos = _posts.find(name{vot.postid});
+		_posts.modify(pos, 0, [&](auto& post) {post.total_voted-=vot.votepower;});	
+	}	
+	while(_vote_action.begin()!=_vote_action.end()){
+		_vote_action.erase(_vote_action.begin());		
+	}	
+	print("Clear");
+}
+EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(givevote)(viewpost)(view)(returnvote)(resultvot)(returnallvote))
 

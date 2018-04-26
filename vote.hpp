@@ -10,13 +10,15 @@ namespace voting{
 			{
 			};
 			void getbalance(account_name user);
-			void givevote(account_name voter, account_name post);
+			void givevote(account_name voter, account_name post,uint32_t);
 			void taketoken(account_name user,uint64_t token);
 			void creatpost(account_name postid);
 			void viewpost(account_name postid);
 			void view(uint64_t e);
 			void returnvote(account_name voter, account_name post);
 			void transfer(account_name from, account_name to);
+			void resultvot(uint64_t e);
+			void returnallvote(uint64_t e);
 			
 		private:
 			struct account{
