@@ -6,7 +6,7 @@ namespace voting{
 	class votoken: public eosio::contract{
 		public:
 			using contract::contract;
-			votoken(account_name self/*,account_name autor*/):contract(self),_accounts(_self,_self),_posts(_self,_self),_vote_action(_self,_self)
+			votoken(account_name self/*,account_name autor*/):contract(self),_accounts(_self,_self),_posts(_self,_self),_vote_action(_self,_self),_delegated(_self,_self)
 			{
 			};
 			void getbalance(account_name user);
@@ -19,11 +19,14 @@ namespace voting{
 			void transfer(account_name from, account_name to);
 			void resultvot(uint64_t e);
 			void returnallvote(uint64_t e);
-			
+			void givevot(account_name voter, account_name post);
+			void subscribe(account_name owner, account_name proxy);
+			void unsubscribe(account_name owner);
 		private:
 			struct account{
 				account_name name;
 				account_name proxy;
+				bool voted;
 				uint64_t balance;
 			
 				uint64_t primary_key()const {return name;}
@@ -51,6 +54,14 @@ namespace voting{
 				EOSLIB_SERIALIZE(vote_action,(voter)(postid)(votepower))		
 			}; 
 			eosio::multi_index<N(vote_actions),vote_action> _vote_action;
+
+			struct delegated{
+				account_name	main;
+				account_name	follow;
+				uint64_t primary_key()const {return main; return follow;}
+				EOSLIB_SERIALIZE(delegated,(main)(follow))
+			};
+			eosio::multi_index<N(delegateds),delegated> _delegated;
 
 	};
 }

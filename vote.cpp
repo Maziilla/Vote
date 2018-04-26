@@ -6,7 +6,35 @@ void votoken::getbalance(account_name user){
 	auto usr = _accounts.find(user);
 	eosio_assert(usr!=_accounts.end(),"This account not exists");
 	//const auto& usr = _accounts.get(user);
-	print("User:",name{(*usr).name}," Tokens: ",(*usr).balance);
+	print("User:",name{(*usr).name},/*" Proxy:",name{(*usr).proxy},*/"Tokens: ",(*usr).balance);
+}
+void votoken::subscribe(account_name owner, account_name proxy){
+	auto owne = _accounts.find(owner);
+	eosio_assert(owne !=_accounts.end(),"Owner not exists");
+	auto prox = _accounts.find(proxy);
+	eosio_assert(prox!=_accounts.end(),"Proxy not exists");
+	eosio_assert((*owne).proxy==NULL,"You alreade subscriby by someone");
+	eosio_assert((*prox).proxy!=owner,"You don't break me!");
+	((*owne).voted==false,"To subscribe remove an existing vote");
+	_accounts.modify(owne,0,[&](auto& user){user.proxy=proxy;});
+	_delegated.emplace((proxy,owner),[&](auto& deleg){
+		deleg.main=proxy;
+		deleg.follow=owner;
+	});
+
+	print("You have subscribed to ",name{proxy});
+}
+void votoken::unsubscribe(account_name owner){
+	auto owne = _accounts.find(owner);
+	eosio_assert(owne !=_accounts.end(),"Owner not exists");	
+	eosio_assert((*owne).proxy!=NULL,"You are not subscriby to anyone");	
+	auto del = _delegated.find( (owner,(*owne).proxy) );
+	eosio_assert(del!=_delegated.end(),"Oooops");
+	_delegated.erase(del);
+	print("You unsubscribed from ",name{(*owne).proxy});
+	_accounts.modify(owne,0,[&](auto& user){user.proxy=NULL;});
+	
+	
 }
 void votoken::givevote(account_name user, account_name post,uint32_t tokens){
 	
@@ -27,6 +55,41 @@ void votoken::givevote(account_name user, account_name post,uint32_t tokens){
 		vot.total_voted+=tokens/10;
 	});
 	_accounts.modify(usr, 0, [&](auto& us) {us.balance-=tokens/10*10;});
+	
+	print("Your vote is given to ",name{(*vot_post).postid});
+
+}
+
+void votoken::givevot(account_name user, account_name post){
+	
+	auto usr = _accounts.find(user);
+	eosio_assert(usr!=_accounts.end(),"This account not exists");
+	auto vot_post = _posts.find(post);
+	eosio_assert(vot_post!=_posts.end(),"This alterantive not exists");
+	eosio_assert((*usr).balance>=10,"You don't have enough token for voting");//может сломать голос главного при случае, когда у подписавшегося недостаточно средств
+	auto vot = _vote_action.find((user,post));
+	eosio_assert(vot==_vote_action.end(),"You alraedy vote for this altrnative");
+	eosio_assert((*usr).voted==false,"Your vote is given to another alternative");
+	_vote_action.emplace((user,post),[&](auto& nvote){
+		nvote.voter=user;
+		nvote.postid=post;
+		nvote.votepower = (*usr).balance/10;		
+	});
+	_posts.modify(vot_post,0,[&](auto& vot){
+		vot.total_voted+=(*usr).balance/10;
+	});
+	_accounts.modify(usr, 0, [&](auto& us) {
+		us.balance-=(*usr).balance/10*10;
+		us.voted = true;//delete without delegate
+	});
+	
+	//Delegate
+	for( auto& temp : _delegated){	
+		if(temp.main == user){
+			auto new_temp = _accounts.find(temp.follow);
+			givevot((*new_temp).name,post);
+		}
+	}
 	print("Your vote is given to ",name{(*vot_post).postid});
 
 }
@@ -43,8 +106,18 @@ void votoken::returnvote(account_name user, account_name post){
 	_posts.modify(vot_post,0,[&](auto& vote){
 		vote.total_voted-=(*vot).votepower;
 	});	
-	_accounts.modify(usr, 0, [&](auto& us) {us.balance+=(*vot).votepower*10;});
-	_vote_action.erase(vot);	
+	_accounts.modify(usr, 0, [&](auto& us) {
+		us.balance+=(*vot).votepower*10;
+		us.voted=false;//delete without delegate
+	});
+	_vote_action.erase(vot);
+	//Delegate
+	for( auto& temp : _delegated){	
+		if(temp.main == user){
+			auto new_temp = _accounts.find(temp.follow);
+			returnvote((*new_temp).name,post);
+		}
+	}	
 	print("Your vote return from ",name{(*vot_post).postid});
 
 }
@@ -126,5 +199,5 @@ void votoken::returnallvote(uint64_t e){
 	}	
 	print("Clear");
 }
-EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(givevote)(viewpost)(view)(returnvote)(resultvot)(returnallvote))
+EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(givevote)(viewpost)(view)(returnvote)(resultvot)(returnallvote)(givevot)(subscribe)(unsubscribe))
 
