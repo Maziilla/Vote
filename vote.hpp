@@ -22,6 +22,8 @@ namespace voting{
 			void givevot(account_name voter, account_name post);
 			void subscribe(account_name owner, account_name proxy);
 			void unsubscribe(account_name owner);
+			void viewvoted(uint64_t e);
+			void viewdeleg(uint64_t e);
 		private:
 			struct account{
 				account_name name;
@@ -50,7 +52,7 @@ namespace voting{
 				account_name	postid;
 				//bool 		voited;
 				uint32_t	votepower;	
-				uint64_t primary_key()const {return postid; return voter;}
+				uint64_t primary_key()const {return (postid,voter);}
 				EOSLIB_SERIALIZE(vote_action,(voter)(postid)(votepower))		
 			}; 
 			eosio::multi_index<N(vote_actions),vote_action> _vote_action;
@@ -58,7 +60,7 @@ namespace voting{
 			struct delegated{
 				account_name	main;
 				account_name	follow;
-				uint64_t primary_key()const {return main; return follow;}
+				uint64_t primary_key()const {return (main,follow);}
 				EOSLIB_SERIALIZE(delegated,(main)(follow))
 			};
 			eosio::multi_index<N(delegateds),delegated> _delegated;

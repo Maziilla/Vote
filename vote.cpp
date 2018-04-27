@@ -197,7 +197,18 @@ void votoken::returnallvote(uint64_t e){
 	while(_vote_action.begin()!=_vote_action.end()){
 		_vote_action.erase(_vote_action.begin());		
 	}	
-	print("Clear");
+	//print("Clear");
 }
-EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(givevote)(viewpost)(view)(returnvote)(resultvot)(returnallvote)(givevot)(subscribe)(unsubscribe))
+void votoken::viewvoted(uint64_t e){
+	for( auto& vot : _vote_action){
+		print("User - ",name{vot.voter}," voted for ",name{vot.postid}," with ",vot.votepower," || ");	
+	}	
+}
+void votoken::viewdeleg(uint64_t e){
+	for( auto& vot : _delegated){
+		print("User - ",name{vot.follow}," follow ",name{vot.main}," || ");	
+	}	
+}
+
+EOSIO_ABI(votoken,(getbalance)(taketoken)(creatpost)(viewpost)(view)(returnvote)(resultvot)(returnallvote)(givevot)(subscribe)(unsubscribe)(viewvoted)(viewdeleg))
 
